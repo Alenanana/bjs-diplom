@@ -16,87 +16,90 @@ ApiConnector.current( response => {
 
 const board = new RatesBoard();
 
-setInterval(ApiConnector.getStocks(response => {
-    if(response.success) {
-        board.clearTable();
-        board.fillTable(response.data);
-    }
-}), 60000);
+function getRates() {
+    ApiConnector.getRates(response => {
+        if (response.success) {
+            board.clearTable();
+            board.fillTable(response.data);
+        }
+    })
+}
+getRates();
+const intervalStocks = setInterval (getRates, 60000);
 
-const manager = new MoneyManager();
+let money = new MoneyManager();
 
-manager.addMoneyCallback = (currencyObj) => {
-    ApiConnector.addMoney(currencyObj, response => {
-        const message = !response.success ? response.data :
-            `Успешное пополнение баланса на сумму ${currencyObj.amount} ${currencyObj.currency}.`;
-
-        manager.setMessage(!response.success, message);
+money.addMoneyCallback = (data) => {
+    ApiConnector.addMoney(data, (response) =>{
+        console.log(data, response)
         if(response.success) {
             ProfileWidget.showProfile(response.data);
+            money.setMessage(response.success, `Успешное пополнение баланса на сумму ${data.amount} ${data.currency}`)
         }
-    });
+        else {
+            money.setMessage(response.success, response.error);
+        }
+    })
+}
+
+money.conversionMoneyCallback = (data) => {
+    ApiConnector.convertMoney(data, (response)=>{
+        if(response.success){
+            ProfileWidget.showProfile(response, data);
+            money.setMessage(response.success, `${data.fromAmount} ${data.fromCurrency} успешно конвертировано ${data.targetCurrency}`);
+        }
+        else {
+            money.setMessage(response.success, response.error);
+        }
+    })
 };
 
-manager.conversionMoneyCallback = (convertObj) => {
-    ApiConnector.convertMoney(convertObj, response => {
-        const message = !response.success ? response.data :
-            `Успешно конвертировано ${convertObj.fromAmount} ${convertObj.fromCurrency} в ${convertObj.targetCurrency}`;
-
-        manager.setMessage(!response.success, message);
-        if(response.success) {
+money.sendMoneyCallback = (data) => {
+    ApiConnector.transferMoney(data, (response) => {
+        console.log(data, response);
+        if (response.success) {
             ProfileWidget.showProfile(response.data);
+            money.setMessage(response.success,`${data.amount} ${data.currency} переведено ${data.to}`);
         }
-    });
-};
-
-manager.sendMoneyCallback = (transfObj) => {
-    ApiConnector.transferMoney(transfObj, response => {
-        const message = !response.success ? response.data :
-            `Перевод выполнен ${transfObj.amount} ${transfObj.currency}.`;
-
-        manager.setMessage(!response.success, message);
-
-        if(response.success) {
-            ProfileWidget.showProfile(response.data);
+        else {
+            money.setMessage(response.success, response.error);
         }
-    });
-};
+    })
+}
 
-const favorite = new FavoritesWidget();
+let favorites = new FavoritesWidget();
 
-ApiConnector.getFavorites( (response) => {
-    if(response.success) {
-        favorite.clearTable();
-        favorite.fillTable(response.data);
-        manager.updateUsersList(response.data);
+ApiConnector.getFavorites((response) =>{
+    if(response.success){
+        favorites.clearTable();
+        favorites.fillTable(response.data);
+        money.updateUsersList(response.data);
     }
 })
 
-favorite.addUserCallback = (data) => {
-    const addUser = favorite.getData();
-    ApiConnector.addUserToFavorites(data, response => {
+favorites.addUserCallback = (data) => {
+    ApiConnector.addUserToFavorites(data,(response) =>{
         if(response.success) {
-            favorite.clearTable();
-            favorite.fillTable(response.data);
-            manager.updateUsersList(response.data);
+            favorites.clearTable();
+            favorites.fillTable(response.data);
+            money.updateUsersList(response.data);
+            favorites.setMessage(response.success, `Пользователь ${data.name} успешно добавлен`);
         }
-        const message = !response.success ? response.data :
-            `Пользователь ${addUser.name} (ID:${addUser.id}) успешно добавлен`;
-
-        favorite.setMessage(!response.success, message);
-    });
-};
-
-favorite.removeUserCallback = (id) => {
-    ApiConnector.removeUserFromFavorites(id, response => {
-
+        else {
+            favorites.setMessage(response.success, response.error);
+        }
+    })
+}
+favorites.removeUserCallback = (data) => {
+    ApiConnector.removeUserFromFavorites(data, (response)=>{
         if(response.success) {
-            favorite.clearTable();
-            favorite.fillTable(response.data);
-            manager.updateUsersList(response.data);
+            favorites.clearTable();
+            favorites.fillTable(response.data);
+            money.updateUsersList(response.data);
+            favorites.setMessage(response.success, `Пользователь успешно удален`)
         }
-
-        const message = 'Пользователь успешно удален';
-        favorite.setMessage(!response.success, message);
-    });
-};
+        else{
+            favorites.setMessage(response.success,response.error);
+        }
+    })
+}
