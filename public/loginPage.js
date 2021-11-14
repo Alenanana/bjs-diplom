@@ -1,23 +1,17 @@
-'use strict';
+`use strict`
 
 const userForm = new UserForm();
 
-userForm.loginFormCallback = (data) =>
-    ApiConnector.login( data, response => {
-        if(response.success) {
-            location.reload();
-        } else {
-            userForm.setLoginErrorMessage(response.data);
-        }
-    });
+userForm.loginFormCallback = data => {
+    console.log(data);
+    ApiConnector.login (data, response => {
+        console.log(response);
+        response.success ? location.reload() : userForm.setLoginErrorMessage('Неверный логин или пароль');
+    })
+}
 
-userForm.registerFormCallback = (data) =>
-    ApiConnector.register( data, response => {
-        if(Object.keys(response).length == 0) {
-            location.reload();
-        }
-
-        if(response.success === false) {
-            userForm.setRegisterErrorMessage(response.data);
-        }
-    });
+userForm.registerFormCallback = data =>{
+    ApiConnector.register (data, response => {
+        response.success ? location.reload() : userForm.setRegisterErrorMessage('Пользователь уже зарегстрирован');
+    })
+}
