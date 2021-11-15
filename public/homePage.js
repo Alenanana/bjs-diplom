@@ -17,7 +17,7 @@ ApiConnector.current( response => {
 const board = new RatesBoard();
 
 function getRates() {
-    ApiConnector.getRates(response => {
+    ApiConnector.getStocks(response => {
         if (response.success) {
             board.clearTable();
             board.fillTable(response.data);
@@ -45,7 +45,7 @@ money.addMoneyCallback = (data) => {
 money.conversionMoneyCallback = (data) => {
     ApiConnector.convertMoney(data, (response)=>{
         if(response.success){
-            ProfileWidget.showProfile(response, data);
+            ProfileWidget.showProfile(response.data);
             money.setMessage(response.success, `${data.fromAmount} ${data.fromCurrency} успешно конвертировано ${data.targetCurrency}`);
         }
         else {
